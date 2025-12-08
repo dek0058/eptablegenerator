@@ -1,0 +1,51 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "build ueproject",
+				"type": "shell",
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${workspaceFolder}/output/",
+				],
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"options": {
+                    "cwd": "${workspaceFolder}/ueproject"
+                },
+				"problemMatcher": [
+					"$go",
+				]
+			}
+		]
+	},
+
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+                "name": "run ueproject",
+                "type": "go",
+                "request": "launch",
+                "mode": "auto",
+                "program": "${workspaceFolder}/ueproject",
+                "env": {},
+                "args": [],
+            },
+		],
+		"compounds": []
+	},
+
+	"settings": {}
+}
