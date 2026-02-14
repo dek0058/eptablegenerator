@@ -1,7 +1,7 @@
 ﻿package main
 
 import (
-	"eptablegenerator/table/config"
+	"eptablegenerator/ueproject/config"
 	"eptablegenerator/ueproject/gen"
 	"os"
 )
@@ -15,7 +15,7 @@ func main() {
 		c = *config.NewConfig()
 	}
 
-	if err := gen.GenerateUE(&c); err != nil {
+	if err := gen.Generate(&c); err != nil {
 		println("Error generating UE project:", err)
 		panic(err)
 	}

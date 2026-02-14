@@ -1,7 +1,7 @@
 ﻿package test
 
 import (
-	"eptablegenerator/table/config"
+	"eptablegenerator/ueproject/config"
 	"eptablegenerator/ueproject/gen"
 	"os"
 	"testing"
@@ -21,7 +21,7 @@ func TestGeneratorUE(t *testing.T) {
 		DestDir:     p,
 	}
 
-	if err := gen.GenerateUE(&c); err != nil {
+	if err := gen.Generate(&c); err != nil {
 		t.Error(err)
 	}
 }

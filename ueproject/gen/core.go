@@ -1,8 +1,9 @@
 ﻿package gen
 
 import (
-	"eptablegenerator/table/config"
+	"eptablegenerator/table"
 	"eptablegenerator/table/xlsx"
+	"eptablegenerator/ueproject/config"
 	"errors"
 	"fmt"
 	"os"
@@ -348,24 +349,12 @@ func (c *ConstType) Optional() {
 	cfg.SaveTo(cfgPath)
 }
 
-func GenerateUE(c *config.Config) error {
+func Generate(c *config.Config) error {
 	if c == nil {
 		return errors.New("config is nil")
 	}
 
-	var files []string
-	err := filepath.WalkDir(c.SourceDir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !d.IsDir() && filepath.Ext(d.Name()) == ".xlsx" {
-			files = append(files, path)
-		}
-
-		return nil
-	})
-
+	files, err := table.FindXLSX(c.SourceDir)
 	if err != nil {
 		return err
 	}

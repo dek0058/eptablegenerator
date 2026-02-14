@@ -27,6 +27,26 @@
 				"problemMatcher": [
 					"$go",
 				]
+			},
+			{
+				"label": "build msw",
+				"type": "shell",
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${workspaceFolder}/output/",
+				],
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"options": {
+					"cwd": "${workspaceFolder}/msw"
+				},
+				"problemMatcher": [
+					"$go",
+				]
 			}
 		]
 	},
@@ -39,10 +59,19 @@
                 "type": "go",
                 "request": "launch",
                 "mode": "auto",
-                "program": "${workspaceFolder}/ueproject",
+                "program": "${workspaceFolder}/ueproject_debug",
                 "env": {},
                 "args": [],
             },
+			{
+				"name": "run msw",
+				"type": "go",
+				"request": "launch",
+				"mode": "auto",
+				"program": "${workspaceFolder}/msw_debug",
+				"env": {},
+				"args": [],
+			}
 		],
 		"compounds": []
 	},
