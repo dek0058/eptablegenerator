@@ -178,7 +178,7 @@ func generate(file string, sheetName string, data [][]string) (tableDocument, er
 		content.WriteString("\tproperty table records = {}\n")
 		content.WriteString("\n")
 
-		content.WriteString("---@description \"테이블을 로드 합니다\"\n")
+		content.WriteString("\t---@description \"테이블을 로드 합니다\"\n")
 		content.WriteString("\tmethod void Load()\n")
 
 		fmt.Fprintf(&content, "\t\tlocal userDataset = _DataService:GetTable(\"%s\")\n", sheetName+"Table")
@@ -217,7 +217,7 @@ func generate(file string, sheetName string, data [][]string) (tableDocument, er
 		content.WriteString("\tend\n")
 		content.WriteString("\n")
 
-		content.WriteString("---@description \"테이블에서 레코드를 가져옵니다\"\n")
+		content.WriteString("\t---@description \"테이블에서 레코드를 가져옵니다\"\n")
 		fmt.Fprintf(&content, "\tmethod %sRecord GetRecord(%s key)\n", sheetName, indexKeyType)
 		content.WriteString("\t\treturn self.records[key]\n")
 		content.WriteString("\tend\n")
