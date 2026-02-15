@@ -57,6 +57,15 @@ type jsonType struct {
 	Dynamicloading    int    `json:"dynamicloading"`
 }
 
+func isFileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return err == nil && !info.IsDir()
+}
+
 func NewUserDataset(name, uuid, coreVersions string) userDataset {
 	return userDataset{
 		Id:             "",
@@ -296,21 +305,30 @@ func createCSV(createdPath string, version string, doc tableDocument) error {
 		return err
 	}
 
-	uuid[6] = (uuid[6] & 0x0f) | 0x40
-	uuid[8] = (uuid[8] & 0x3f) | 0x80
-	uuidStr := fmt.Sprintf("%x-%x-%x-%x-%x",
-		uuid[0:4],   // 8자리
-		uuid[4:6],   // 4자리
-		uuid[6:8],   // 4자리 (버전 포함)
-		uuid[8:10],  // 4자리 (variant 포함)
-		uuid[10:16], // 12자리
-	)
+	// 파일이 존재하지 않을 때만 userdataset 생성
+	if !isFileExists(filepath.Join(createdPath, doc.Name+"Table.userdataset")) {
+		uuid[6] = (uuid[6] & 0x0f) | 0x40
+		uuid[8] = (uuid[8] & 0x3f) | 0x80
+		uuidStr := fmt.Sprintf("%x-%x-%x-%x-%x",
+			uuid[0:4],   // 8자리
+			uuid[4:6],   // 4자리
+			uuid[6:8],   // 4자리 (버전 포함)
+			uuid[8:10],  // 4자리 (variant 포함)
+			uuid[10:16], // 12자리
+		)
 
-	userDataset := NewUserDataset(doc.Name+"Table", uuidStr, version)
-	jsonData, err := json.MarshalIndent(userDataset, "", "    ")
-	if err != nil {
-		log.Printf("Failed to marshal user dataset for document '%s': %v\n", doc.Name, err)
-		return err
+		userDataset := NewUserDataset(doc.Name+"Table", uuidStr, version)
+		jsonData, err := json.MarshalIndent(userDataset, "", "    ")
+		if err != nil {
+			log.Printf("Failed to marshal user dataset for document '%s': %v\n", doc.Name, err)
+			return err
+		}
+
+		userDatasetFile := filepath.Join(createdPath, doc.Name+"Table.userdataset")
+		if err := os.WriteFile(userDatasetFile, jsonData, 0644); err != nil {
+			log.Printf("Failed to write user dataset file '%s': %v\n", userDatasetFile, err)
+			return err
+		}
 	}
 
 	path := filepath.Join(createdPath, doc.Name+"Table.csv")
@@ -326,12 +344,6 @@ func createCSV(createdPath string, version string, doc tableDocument) error {
 
 	if err := writer.WriteAll(doc.Rows); err != nil {
 		log.Printf("Failed to write to file '%s': %v\n", path, err)
-		return err
-	}
-
-	userDatasetFile := filepath.Join(createdPath, doc.Name+"Table.userdataset")
-	if err := os.WriteFile(userDatasetFile, jsonData, 0644); err != nil {
-		log.Printf("Failed to write user dataset file '%s': %v\n", userDatasetFile, err)
 		return err
 	}
 
