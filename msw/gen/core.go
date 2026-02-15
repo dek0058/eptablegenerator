@@ -93,7 +93,7 @@ func NewUserDataset(name, uuid, coreVersions string) userDataset {
 }
 
 func generate(file string, sheetName string, data [][]string) (tableDocument, error) {
-	if len(data) < 2 {
+	if len(data) < 3 {
 		log.Printf("Sheet '%s' in file '%s' has insufficient data, skipping.\n", sheetName, file)
 		return tableDocument{}, errors.New("insufficient data")
 	}
@@ -239,7 +239,7 @@ func generate(file string, sheetName string, data [][]string) (tableDocument, er
 
 	// csv 데이터 생성
 	for i, row := range data {
-		if i > 0 && i < 3 {
+		if i < 3 {
 			continue
 		}
 

@@ -47,6 +47,26 @@
 				"problemMatcher": [
 					"$go",
 				]
+			},
+			{
+				"label": "build mswgoproject",
+				"type": "shell",
+				"command": "go",
+				"args": [
+					"build",
+					"-o",
+					"${workspaceFolder}/output/",
+				],
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"options": {
+					"cwd": "${workspaceFolder}/mswgoproject"
+				},
+				"problemMatcher": [
+					"$go",
+				]
 			}
 		]
 	},
@@ -69,6 +89,15 @@
 				"request": "launch",
 				"mode": "auto",
 				"program": "${workspaceFolder}/msw_debug",
+				"env": {},
+				"args": [],
+			},
+			{
+				"name": "run mswgoproject",
+				"type": "go",
+				"request": "launch",
+				"mode": "auto",
+				"program": "${workspaceFolder}/mswgoproject_debug",
 				"env": {},
 				"args": [],
 			}
