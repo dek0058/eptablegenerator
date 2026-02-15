@@ -1,0 +1,12 @@
+---@description "자동 생성된 테이블 입니다. 수정하지 마세요 (Derivative: Item)"
+@Struct
+script ItemRecord
+
+	property string Index = ""
+	property string Category = ""
+	property string Name = ""
+	property integer Level = 0
+	property number SellGold = 0.0
+	property boolean Equip = false
+
+end

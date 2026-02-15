@@ -1,0 +1,33 @@
+---@description "자동 생성된 테이블 입니다. 수정하지 마세요 (Derivative: Item)"
+@Struct
+script ItemTable
+
+	property table records = {}
+
+	---@description "테이블을 로드 합니다"
+	method void Load()
+		local userDataset = _DataService:GetTable("ItemTable")
+		local rowCount = userDataset:GetRowCount()
+
+		for row = 1, rowCount do
+			local record = ItemRecord()
+			local cell = ""
+			record.Index = userDataset:GetCell(row, "Index")
+			record.Category = userDataset:GetCell(row, "Category")
+			record.Name = userDataset:GetCell(row, "Name")
+			cell = userDataset:GetCell(row, "Level")
+			record.Level = tonumber(cell) or 0
+			cell = userDataset:GetCell(row, "SellGold")
+			record.SellGold = tonumber(cell) or 0.0
+			cell = userDataset:GetCell(row, "Equip")
+			record.Equip = (string.lower(cell) == "true")
+			self.records[record.Index] = record
+		end
+	end
+
+	---@description "테이블에서 레코드를 가져옵니다"
+	method ItemRecord GetRecord(string key)
+		return self.records[key]
+	end
+
+end
