@@ -1,6 +1,10 @@
 # eptablegenerator&nbsp;[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT) ![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=flat&logo=go&logoColor=white) ![Go Version](https://img.shields.io/badge/Version-1.25.4-00ADD8?style=flat&logo=go&logoColor=white)
 
-이 프로젝트는 데이터 파일을 게임 프로젝트의 소스 코드로 변환하여 개발자의 편의를 향상시키기 위해 생성되었습니다. 현재는 XLSX 파일을 Unreal Engine 5에서 사용할 수 있도록 `.h` 파일로 변환하여 저장합니다.
+이 프로젝트는 데이터 파일을 게임 프로젝트의 소스 코드로 변환하여 개발자의 편의를 향상시키기 위해 생성되었습니다.
+
+지원하는 프로젝트는 다음과 같습니다
+ - UnrealEngine
+ - MapleStroyWorlds
 
 ## 목차
 
