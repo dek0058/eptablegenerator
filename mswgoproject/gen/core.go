@@ -8,8 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -118,6 +120,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 		case "boolean":
 			cellData.header = header
 			cellData.typeName = "bool"
+
 			imports["strconv"] = nil
 
 		case "integer":
@@ -140,7 +143,6 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 
 		cellDatas = append(cellDatas, cellData)
 	}
-	imports["github.com/rs/zerolog/log"] = nil
 
 	if indexKeyType == "" || indexKeyName == "" {
 		log.Printf("Sheet '%s' does not have a valid key column, skipping.\n", sheetName)
@@ -152,9 +154,14 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	content.WriteString("package " + packageName + "\n\n")
 	if len(imports) > 0 {
 		content.WriteString("import (\n")
-		for imp := range imports {
+
+		keys := slices.Collect(maps.Keys(imports))
+		slices.Sort(keys)
+		for _, imp := range keys {
 			content.WriteString("\t\"" + imp + "\"\n")
 		}
+		content.WriteString("\n")
+		content.WriteString("\t\"github.com/rs/zerolog/log\"\n")
 		content.WriteString(")\n\n")
 	}
 	content.WriteString("func New" + sheetName + "Table() *" + sheetName + "Table {\n")
