@@ -97,6 +97,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 
 	imports := map[string]any{
 		"encoding/csv": nil,
+		"errors":       nil,
 		"os":           nil,
 	}
 
@@ -139,6 +140,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 
 		cellDatas = append(cellDatas, cellData)
 	}
+	imports["github.com/rs/zerolog/log"] = nil
 
 	if indexKeyType == "" || indexKeyName == "" {
 		log.Printf("Sheet '%s' does not have a valid key column, skipping.\n", sheetName)
@@ -170,6 +172,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	}
 	content.WriteString("}\n\n")
 	content.WriteString("func (t *" + sheetName + "Table) Load(csvPath string) error {\n")
+	content.WriteString("\tvar err error\n")
 	content.WriteString("\tfile, err := os.Open(csvPath)\n")
 	content.WriteString("\tif err != nil {\n")
 	content.WriteString("\t\treturn err\n")
@@ -180,35 +183,47 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	content.WriteString("\tif err != nil {\n")
 	content.WriteString("\t\treturn err\n")
 	content.WriteString("\t}\n\n")
-	content.WriteString("\tfor _, record := range records {\n")
+	content.WriteString("\tfor _, record := range records[1:] {\n")
 	content.WriteString("\t\trec := &" + sheetName + "Record{}\n")
 	for i, cellData := range cellDatas {
 		switch cellData.typeName {
 		case "bool":
-			content.WriteString("\t\tboolVal, err := strconv.ParseBool(record[" + fmt.Sprint(i) + "])\n")
-			content.WriteString("\t\tif err != nil {\n")
-			content.WriteString("\t\t\treturn err\n")
+			content.WriteString("\t\t{\n")
+			content.WriteString("\t\t\tboolVal, err := strconv.ParseBool(record[" + fmt.Sprint(i) + "])\n")
+			content.WriteString("\t\t\tif err != nil {\n")
+			content.WriteString("\t\t\t\treturn err\n")
+			content.WriteString("\t\t\t}\n")
+			content.WriteString("\t\t\trec." + cellData.header + " = boolVal\n")
 			content.WriteString("\t\t}\n")
-			content.WriteString("\t\trec." + cellData.header + " = boolVal\n")
 
 		case "int64":
-			content.WriteString("\t\tintVal, err := strconv.ParseInt(record[" + fmt.Sprint(i) + "], 10, 64)\n")
-			content.WriteString("\t\tif err != nil {\n")
-			content.WriteString("\t\t\treturn err\n")
+			content.WriteString("\t\t{\n")
+			content.WriteString("\t\t\tintVal, err := strconv.ParseInt(record[" + fmt.Sprint(i) + "], 10, 64)\n")
+			content.WriteString("\t\t\tif err != nil {\n")
+			content.WriteString("\t\t\t\treturn err\n")
+			content.WriteString("\t\t\t}\n")
+			content.WriteString("\t\t\trec." + cellData.header + " = intVal\n")
 			content.WriteString("\t\t}\n")
-			content.WriteString("\t\trec." + cellData.header + " = intVal\n")
 
 		case "float64":
-			content.WriteString("\t\tfloatVal, err := strconv.ParseFloat(record[" + fmt.Sprint(i) + "], 64)\n")
-			content.WriteString("\t\tif err != nil {\n")
-			content.WriteString("\t\t\treturn err\n")
+			content.WriteString("\t\t{\n")
+			content.WriteString("\t\t\tfloatVal, err := strconv.ParseFloat(record[" + fmt.Sprint(i) + "], 64)\n")
+			content.WriteString("\t\t\tif err != nil {\n")
+			content.WriteString("\t\t\t\treturn err\n")
+			content.WriteString("\t\t\t}\n")
+			content.WriteString("\t\t\trec." + cellData.header + " = floatVal\n")
 			content.WriteString("\t\t}\n")
-			content.WriteString("\t\trec." + cellData.header + " = floatVal\n")
 
 		case "string":
 			content.WriteString("\t\trec." + cellData.header + " = record[" + fmt.Sprint(i) + "]\n")
 		}
 	}
+	content.WriteString("\t\t_, ok := t.records[rec." + indexKeyName + "]\n")
+	content.WriteString("\t\tif ok {\n")
+	content.WriteString("\t\t\tlog.Printf(\"Duplicate key '%v' found in CSV, skipping record.\\n\", rec." + indexKeyName + ")\n")
+	content.WriteString("\t\t\terr = errors.New(\"duplicate key\")\n")
+	content.WriteString("\t\t\tcontinue\n")
+	content.WriteString("\t\t}\n")
 	content.WriteString("\t\tt.records[rec." + indexKeyName + "] = rec\n")
 	content.WriteString("\t}\n")
 	content.WriteString("\treturn nil\n")
@@ -221,6 +236,17 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	result.content = content.String()
 
 	// csv 파일 생성
+	if len(data) > 0 {
+		newDatas := []string{}
+		for i := range colmnCount {
+			if strings.ToLower(attributes[i]) == "design" {
+				continue
+			}
+			newDatas = append(newDatas, headers[i])
+		}
+		result.rows = append(result.rows, newDatas)
+	}
+
 	for i, row := range data {
 		if i < 3 {
 			continue
