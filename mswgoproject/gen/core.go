@@ -239,6 +239,13 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	content.WriteString("\trec, ok := t.records[key]\n")
 	content.WriteString("\treturn rec, ok\n")
 	content.WriteString("}\n\n")
+	content.WriteString("func (t *" + sheetName + "Table) GetAll() []" + sheetName + "Record {\n")
+	content.WriteString("\tall := make([]" + sheetName + "Record, 0, len(t.records))\n")
+	content.WriteString("\tfor _, rec := range t.records {\n")
+	content.WriteString("\t\tall = append(all, *rec)\n")
+	content.WriteString("\t}\n")
+	content.WriteString("\treturn all\n")
+	content.WriteString("}\n")
 
 	result.content = content.String()
 
