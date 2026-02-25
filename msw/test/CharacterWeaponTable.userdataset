@@ -1,7 +1,7 @@
 {
     "Id": "",
     "GameId": "",
-    "EntryKey": "userdataset://94236c36-4f74-405f-8025-73a81b75ca2e",
+    "EntryKey": "userdataset://8cbdcdb5-33c6-4aba-be94-3f4ea75dcfe3",
     "ContentType": "x-mod/userdataset",
     "Content": "",
     "Usage": 0,
@@ -13,8 +13,8 @@
     "ContentProto": {
         "Use": "Json",
         "Json": {
-            "name": "ItemTable",
-            "id": "94236c36-4f74-405f-8025-73a81b75ca2e",
+            "name": "CharacterWeaponTable",
+            "id": "8cbdcdb5-33c6-4aba-be94-3f4ea75dcfe3",
             "serveronly": false,
             "syncDataSetWebUrl": "",
             "dynamicloading": 0

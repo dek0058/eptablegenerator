@@ -1,0 +1,35 @@
+---@description "자동 생성된 테이블 입니다. 수정하지 마세요 (Derivative: CharacterWeapon)"
+@Struct
+script CharacterWeaponTable
+
+	property table records = {}
+
+	---@description "테이블을 로드 합니다"
+	method void Load()
+		local userDataset = _DataService:GetTable("CharacterWeaponTable")
+		local rowCount = userDataset:GetRowCount()
+
+		for row = 1, rowCount do
+			local record = CharacterWeaponRecord()
+			local cell = ""
+			record.Index = userDataset:GetCell(row, "Index")
+			record.ItemName = userDataset:GetCell(row, "ItemName")
+			record.WeaponType = userDataset:GetCell(row, "WeaponType")
+			record.Stand = userDataset:GetCell(row, "Stand")
+			record.Walk = userDataset:GetCell(row, "Walk")
+			record.SwingAttack = userDataset:GetCell(row, "SwingAttack")
+			record.SwingFinalAttack = userDataset:GetCell(row, "SwingFinalAttack")
+			record.StabAttack = userDataset:GetCell(row, "StabAttack")
+			record.StabFinalAttack = userDataset:GetCell(row, "StabFinalAttack")
+			record.ShootAttack = userDataset:GetCell(row, "ShootAttack")
+			record.ShootFinalAttack = userDataset:GetCell(row, "ShootFinalAttack")
+			self.records[record.Index] = record
+		end
+	end
+
+	---@description "테이블에서 레코드를 가져옵니다"
+	method CharacterWeaponRecord GetRecord(string key)
+		return self.records[key]
+	end
+
+end

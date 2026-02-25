@@ -1,0 +1,17 @@
+---@description "자동 생성된 테이블 입니다. 수정하지 마세요 (Derivative: CharacterWeapon)"
+@Struct
+script CharacterWeaponRecord
+
+	property string Index = ""
+	property string ItemName = ""
+	property string WeaponType = ""
+	property string Stand = ""
+	property string Walk = ""
+	property string SwingAttack = ""
+	property string SwingFinalAttack = ""
+	property string StabAttack = ""
+	property string StabFinalAttack = ""
+	property string ShootAttack = ""
+	property string ShootFinalAttack = ""
+
+end

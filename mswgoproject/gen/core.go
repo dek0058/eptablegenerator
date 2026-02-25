@@ -274,6 +274,11 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 			if strings.ToLower(attributes[j]) == "design" {
 				continue
 			}
+			if j >= len(row) {
+				newDatas = append(newDatas, "")
+				continue
+			}
+
 			newDatas = append(newDatas, row[j])
 		}
 

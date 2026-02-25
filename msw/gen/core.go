@@ -239,13 +239,18 @@ func generate(file string, sheetName string, data [][]string) (tableDocument, er
 
 	// csv 데이터 생성
 	for i, row := range data {
-		if i < 3 {
+		if i != 0 && i < 3 {
 			continue
 		}
 
 		newDatas := []string{}
 		for j := range colmnCount {
 			if strings.ToLower(attributes[j]) == "design" {
+				continue
+			}
+
+			if j >= len(row) {
+				newDatas = append(newDatas, "")
 				continue
 			}
 
