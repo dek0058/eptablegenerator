@@ -106,10 +106,11 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	cellDatas := make([]cellData, 0, colmnCount)
 
 	for i, v := range attributes {
+		isKey := false
 		if strings.ToLower(v) == "design" {
 			continue
 		} else if strings.ToLower(v) == "key" {
-			indexKeyType = types[i]
+			isKey = true
 			indexKeyName = headers[i]
 		}
 
@@ -139,6 +140,10 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 
 		default:
 			continue
+		}
+
+		if isKey {
+			indexKeyType = cellData.typeName
 		}
 
 		cellDatas = append(cellDatas, cellData)
