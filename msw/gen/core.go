@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/csv"
 	"encoding/json"
@@ -64,6 +65,42 @@ func isFileExists(path string) bool {
 	}
 
 	return err == nil && !info.IsDir()
+}
+
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
+
+// normalizeContent 는 파일 내용을 비교하기 위해 UTF-8 BOM 과 개행 문자를 정규화합니다.
+//
+// MSW 메이커는 데이터셋을 열거나 새로고침할 때 .csv 를 UTF-8 BOM + CRLF 로 다시 저장합니다.
+// 반면 이 생성기는 BOM 없이 LF 로 기록하기 때문에, 표의 내용이 전혀 바뀌지 않았는데도
+// 매번 파일 전체가 수정된 것처럼 보이게 됩니다. 비교할 때는 이 차이를 무시합니다.
+func normalizeContent(content []byte) []byte {
+	content = bytes.TrimPrefix(content, utf8BOM)
+	content = bytes.ReplaceAll(content, []byte("\r\n"), []byte("\n"))
+
+	return content
+}
+
+// writeFileIfChanged 는 기존 파일과 내용이 같으면 파일을 다시 쓰지 않습니다.
+// BOM 과 개행 문자의 차이는 내용 변경으로 보지 않습니다.
+func writeFileIfChanged(path string, content []byte) error {
+	old, err := os.ReadFile(path)
+	if err == nil {
+		if bytes.Equal(normalizeContent(old), normalizeContent(content)) {
+			log.Printf("Unchanged, skipped: %s\n", path)
+			return nil
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err := os.WriteFile(path, content, 0644); err != nil {
+		return err
+	}
+
+	log.Printf("Generated file: %s\n", path)
+
+	return nil
 }
 
 func NewUserDataset(name, uuid, coreVersions string) userDataset {
@@ -266,52 +303,34 @@ func generate(file string, sheetName string, data [][]string) (tableDocument, er
 func createMlua(createdPath string, doc tableDocument) error {
 	{
 		path := filepath.Join(createdPath, doc.Name+"Record.mlua")
-		h, err := os.Create(path)
-		if err != nil {
-			log.Printf("Failed to create file '%s': %v\n", path, err)
-			return err
-		}
-		defer h.Close()
-
-		if _, err := h.WriteString(doc.RecordContent); err != nil {
+		if err := writeFileIfChanged(path, []byte(doc.RecordContent)); err != nil {
 			log.Printf("Failed to write to file '%s': %v\n", path, err)
 			return err
 		}
-
-		log.Printf("Generated mLua file: %s\n", path)
 	}
 
 	{
 		path := filepath.Join(createdPath, doc.Name+"Table.mlua")
-		h, err := os.Create(path)
-		if err != nil {
-			log.Printf("Failed to create file '%s': %v\n", path, err)
-			return err
-		}
-		defer h.Close()
-
-		if _, err := h.WriteString(doc.TableContent); err != nil {
+		if err := writeFileIfChanged(path, []byte(doc.TableContent)); err != nil {
 			log.Printf("Failed to write to file '%s': %v\n", path, err)
 			return err
 		}
-
-		log.Printf("Generated mLua file: %s\n", path)
 	}
 
 	return nil
 }
 
 func createCSV(createdPath string, version string, doc tableDocument) error {
-	uuid := make([]byte, 16)
-
-	_, err := io.ReadFull(rand.Reader, uuid)
-	if err != nil {
-		log.Printf("Failed to generate UUID for document '%s': %v\n", doc.Name, err)
-		return err
-	}
-
 	// 파일이 존재하지 않을 때만 userdataset 생성
-	if !isFileExists(filepath.Join(createdPath, doc.Name+"Table.userdataset")) {
+	userDatasetFile := filepath.Join(createdPath, doc.Name+"Table.userdataset")
+	if !isFileExists(userDatasetFile) {
+		uuid := make([]byte, 16)
+
+		if _, err := io.ReadFull(rand.Reader, uuid); err != nil {
+			log.Printf("Failed to generate UUID for document '%s': %v\n", doc.Name, err)
+			return err
+		}
+
 		uuid[6] = (uuid[6] & 0x0f) | 0x40
 		uuid[8] = (uuid[8] & 0x3f) | 0x80
 		uuidStr := fmt.Sprintf("%x-%x-%x-%x-%x",
@@ -329,30 +348,26 @@ func createCSV(createdPath string, version string, doc tableDocument) error {
 			return err
 		}
 
-		userDatasetFile := filepath.Join(createdPath, doc.Name+"Table.userdataset")
 		if err := os.WriteFile(userDatasetFile, jsonData, 0644); err != nil {
 			log.Printf("Failed to write user dataset file '%s': %v\n", userDatasetFile, err)
 			return err
 		}
 	}
 
-	path := filepath.Join(createdPath, doc.Name+"Table.csv")
-	h, err := os.Create(path)
-	if err != nil {
-		log.Printf("Failed to create file '%s': %v\n", path, err)
+	// 파일에 바로 쓰지 않고 버퍼에 만든 뒤, 기존 파일과 다를 때만 기록합니다.
+	var buf bytes.Buffer
+
+	writer := csv.NewWriter(&buf)
+	if err := writer.WriteAll(doc.Rows); err != nil {
+		log.Printf("Failed to encode CSV for document '%s': %v\n", doc.Name, err)
 		return err
 	}
-	defer h.Close()
 
-	writer := csv.NewWriter(h)
-	defer writer.Flush()
-
-	if err := writer.WriteAll(doc.Rows); err != nil {
+	path := filepath.Join(createdPath, doc.Name+"Table.csv")
+	if err := writeFileIfChanged(path, buf.Bytes()); err != nil {
 		log.Printf("Failed to write to file '%s': %v\n", path, err)
 		return err
 	}
-
-	log.Printf("Generated CSV file: %s\n", path)
 
 	return nil
 }
