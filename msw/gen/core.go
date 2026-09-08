@@ -69,11 +69,8 @@ func isFileExists(path string) bool {
 
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
-// normalizeContent 는 파일 내용을 비교하기 위해 UTF-8 BOM 과 개행 문자를 정규화합니다.
-//
-// MSW 메이커는 데이터셋을 열거나 새로고침할 때 .csv 를 UTF-8 BOM + CRLF 로 다시 저장합니다.
-// 반면 이 생성기는 BOM 없이 LF 로 기록하기 때문에, 표의 내용이 전혀 바뀌지 않았는데도
-// 매번 파일 전체가 수정된 것처럼 보이게 됩니다. 비교할 때는 이 차이를 무시합니다.
+// normalizeContent 는 두 파일의 내용이 실질적으로 같은지 보기 위해
+// UTF-8 BOM 과 개행 문자를 정규화합니다.
 func normalizeContent(content []byte) []byte {
 	content = bytes.TrimPrefix(content, utf8BOM)
 	content = bytes.ReplaceAll(content, []byte("\r\n"), []byte("\n"))
@@ -81,13 +78,27 @@ func normalizeContent(content []byte) []byte {
 	return content
 }
 
-// writeFileIfChanged 는 기존 파일과 내용이 같으면 파일을 다시 쓰지 않습니다.
-// BOM 과 개행 문자의 차이는 내용 변경으로 보지 않습니다.
+// writeFileIfChanged 는 기존 파일과 내용이 완전히 같으면 파일을 다시 쓰지 않습니다.
+//
+// MSW 메이커는 데이터셋을 열거나 새로고침할 때 .csv 를 UTF-8 BOM + CRLF 로 다시 저장합니다.
+// 표의 내용이 전혀 바뀌지 않았는데도 바이트가 달라지기 때문에, 형상 관리에서는 매번
+// 변경된 파일로 잡히게 됩니다. 이 경우 생성기가 기록하는 형태(BOM 없음, LF)로 되돌려서
+// 실제 내용이 바뀌지 않았다면 변경점이 남지 않도록 합니다.
 func writeFileIfChanged(path string, content []byte) error {
 	old, err := os.ReadFile(path)
 	if err == nil {
-		if bytes.Equal(normalizeContent(old), normalizeContent(content)) {
+		if bytes.Equal(old, content) {
 			log.Printf("Unchanged, skipped: %s\n", path)
+			return nil
+		}
+
+		if bytes.Equal(normalizeContent(old), normalizeContent(content)) {
+			if err := os.WriteFile(path, content, 0644); err != nil {
+				return err
+			}
+
+			log.Printf("Restored (BOM/EOL only): %s\n", path)
+
 			return nil
 		}
 	} else if !os.IsNotExist(err) {
