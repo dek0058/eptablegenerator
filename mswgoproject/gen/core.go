@@ -7,6 +7,7 @@ import (
 	"eptablegenerator/table/xlsx"
 	"errors"
 	"fmt"
+	"go/token"
 	"log"
 	"maps"
 	"os"
@@ -74,6 +75,15 @@ func (d sheetData) Execute(destPath string, csvPath string) error {
 	return nil
 }
 
+// 열 이름을 Go 필드 이름으로 씁니다. 열 이름이 Go 예약어(type 등)면 그대로는 컴파일되지 않으므로 뒤에 _ 를 붙입니다.
+// CSV 머리글은 원래 열 이름 그대로 둡니다.
+func fieldName(header string) string {
+	if token.IsKeyword(header) {
+		return header + "_"
+	}
+	return header
+}
+
 func generate(packageName string, sheetName string, data [][]string) (sheetData, error) {
 	if len(data) < 3 {
 		log.Printf("Sheet '%s' has insufficient data, skipping.\n", sheetName)
@@ -111,10 +121,10 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 			continue
 		} else if strings.ToLower(v) == "key" {
 			isKey = true
-			indexKeyName = headers[i]
+			indexKeyName = fieldName(headers[i])
 		}
 
-		header := headers[i]
+		header := fieldName(headers[i])
 		var cellData cellData
 
 		switch types[i] {
@@ -199,8 +209,9 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 	content.WriteString("\t\trec := &" + sheetName + "Record{}\n")
 	for i, cellData := range cellDatas {
 		switch cellData.typeName {
+		// 숫자·불 칸이 비어 있으면(엑셀에서 비워 둔 칸) 0 값으로 둡니다. 그대로 파싱하면 테이블 로드 전체가 실패합니다.
 		case "bool":
-			content.WriteString("\t\t{\n")
+			content.WriteString("\t\tif record[" + fmt.Sprint(i) + "] != \"\" {\n")
 			content.WriteString("\t\t\tboolVal, err := strconv.ParseBool(record[" + fmt.Sprint(i) + "])\n")
 			content.WriteString("\t\t\tif err != nil {\n")
 			content.WriteString("\t\t\t\treturn err\n")
@@ -209,7 +220,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 			content.WriteString("\t\t}\n")
 
 		case "int64":
-			content.WriteString("\t\t{\n")
+			content.WriteString("\t\tif record[" + fmt.Sprint(i) + "] != \"\" {\n")
 			content.WriteString("\t\t\tintVal, err := strconv.ParseInt(record[" + fmt.Sprint(i) + "], 10, 64)\n")
 			content.WriteString("\t\t\tif err != nil {\n")
 			content.WriteString("\t\t\t\treturn err\n")
@@ -218,7 +229,7 @@ func generate(packageName string, sheetName string, data [][]string) (sheetData,
 			content.WriteString("\t\t}\n")
 
 		case "float64":
-			content.WriteString("\t\t{\n")
+			content.WriteString("\t\tif record[" + fmt.Sprint(i) + "] != \"\" {\n")
 			content.WriteString("\t\t\tfloatVal, err := strconv.ParseFloat(record[" + fmt.Sprint(i) + "], 64)\n")
 			content.WriteString("\t\t\tif err != nil {\n")
 			content.WriteString("\t\t\t\treturn err\n")
